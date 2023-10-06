@@ -4,22 +4,21 @@
 #include <string.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <windows.h>
 
 #define MAX_MESSAGE_LENGTH 1024
 #define PORT 8080
 
-// определение класса для клиента
+// РѕРїСЂРµРґРµР»РµРЅРёРµ РєР»Р°СЃСЃР° РґР»СЏ РєР»РёРµРЅС‚Р°
 typedef struct {
 SOCKET socket;
 } Client;
 
-// определение класса для сервера
+// РѕРїСЂРµРґРµР»РµРЅРёРµ РєР»Р°СЃСЃР° РґР»СЏ СЃРµСЂРІРµСЂР°
 typedef struct {
 SOCKET socket;
 } Server;
 
-// функция для создания сокета и привязки к адресу
+// С„СѓРЅРєС†РёСЏ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ СЃРѕРєРµС‚Р° Рё РїСЂРёРІСЏР·РєРё Рє Р°РґСЂРµСЃСѓ
 SOCKET create_socket(char type, int port);
 struct sockaddr_in serverAddress, clientAddress;
 
@@ -30,73 +29,72 @@ void error(const char* message) {
 
 int main() {
 	
-	SetConsoleCP(1251);
-	SetConsoleOutputCP(1251);
+	setlocale(LC_ALL, "Russian");
     WSADATA wsaData;
     Server server;
     Client client;
     char message[MAX_MESSAGE_LENGTH];
-    // Инициализация Winsock
+
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Winsock
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        error("Ошибка инициализации Winsock");
+        error("РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё Winsock");
     }
     
-    printf("s - сервер | k - клиент\n");
+    printf("s - СЃРµСЂРІРµСЂ | k - РєР»РёРµРЅС‚\n");
     char c;
     c = getchar();
 	
 	if(c == 's') 
 	{
-		// Создание сокета
+		// РЎРѕР·РґР°РЅРёРµ СЃРѕРєРµС‚Р°
 		server.socket = create_socket(c, PORT);
 		if (server.socket == INVALID_SOCKET) {
-			error("Не удалось создать сокет");
+			error("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ СЃРѕРєРµС‚");
 		}
 		
-		// Привязка сокета к адресу
+		// РџСЂРёРІСЏР·РєР° СЃРѕРєРµС‚Р° Рє Р°РґСЂРµСЃСѓ
 		if (bind(server.socket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR) {
-			error("Ошибка привязки сокета");
+			error("РћС€РёР±РєР° РїСЂРёРІСЏР·РєРё СЃРѕРєРµС‚Р°");
 		}
 		
-		// Прослушивание сокета
+		// РџСЂРѕСЃР»СѓС€РёРІР°РЅРёРµ СЃРѕРєРµС‚Р°
 		if (listen(server.socket, SOMAXCONN) == SOCKET_ERROR) {
-			error("Ошибка при прослушивании сокета");
+			error("РћС€РёР±РєР° РїСЂРё РїСЂРѕСЃР»СѓС€РёРІР°РЅРёРё СЃРѕРєРµС‚Р°");
 		}
 		
-		printf("Сервер запущен. Ожидание подключений...\n");
+		printf("РЎРµСЂРІРµСЂ Р·Р°РїСѓС‰РµРЅ. РћР¶РёРґР°РЅРёРµ РїРѕРґРєР»СЋС‡РµРЅРёР№...\n");
 		
-		// Принятие входящих соединений
+		// РџСЂРёРЅСЏС‚РёРµ РІС…РѕРґСЏС‰РёС… СЃРѕРµРґРёРЅРµРЅРёР№
 		int clientAddressSize = sizeof(clientAddress);
 		client.socket = accept(server.socket, (struct sockaddr*)&clientAddress, &clientAddressSize);
 		if (client.socket == INVALID_SOCKET) {
-			error("Ошибка при принятии соединения");
+			error("РћС€РёР±РєР° РїСЂРё РїСЂРёРЅСЏС‚РёРё СЃРѕРµРґРёРЅРµРЅРёСЏ");
 		}
 		
-		printf("Подключение принято. Готов к обмену сообщениями.\n");
+		printf("РџРѕРґРєР»СЋС‡РµРЅРёРµ РїСЂРёРЅСЏС‚Рѕ. Р“РѕС‚РѕРІ Рє РѕР±РјРµРЅСѓ СЃРѕРѕР±С‰РµРЅРёСЏРјРё.\n");
 		
 		while (1) {
-			// Очистка буфера сообщения
+			// РћС‡РёСЃС‚РєР° Р±СѓС„РµСЂР° СЃРѕРѕР±С‰РµРЅРёСЏ
 			memset(message, 0, MAX_MESSAGE_LENGTH);
 			
-			// Получение сообщения от клиента
+			// РџРѕР»СѓС‡РµРЅРёРµ СЃРѕРѕР±С‰РµРЅРёСЏ РѕС‚ РєР»РёРµРЅС‚Р°
 			if (recv(client.socket, message, MAX_MESSAGE_LENGTH, 0) == SOCKET_ERROR) {
-			error("Ошибка при получении сообщения");
+			error("РћС€РёР±РєР° РїСЂРё РїРѕР»СѓС‡РµРЅРёРё СЃРѕРѕР±С‰РµРЅРёСЏ");
 			}
 			
-			printf("Клиент: %s\n", message);
+			printf("РљР»РёРµРЅС‚: %s\n", message);
 			
-			// Отправка ответного сообщения клиенту
-			printf("Сервер (Введите сообщение): ");
-			fflush(stdin);
-			fgets(message, MAX_MESSAGE_LENGTH, stdin);
+			// РћС‚РїСЂР°РІРєР° РѕС‚РІРµС‚РЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ РєР»РёРµРЅС‚Сѓ
+			printf("РЎРµСЂРІРµСЂ (Р’РІРµРґРёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ): ");
+			scanf("%s", message);
 			message[strcspn(message, "\n")] = '\0';
 			
 			if (send(client.socket, message, strlen(message), 0) == SOCKET_ERROR) {
-			error("Ошибка при отправке сообщения");
+			error("РћС€РёР±РєР° РїСЂРё РѕС‚РїСЂР°РІРєРµ СЃРѕРѕР±С‰РµРЅРёСЏ");
 			}
 		}
 		
-		// Закрытие сокета и высвобождение ресурсов Winsock
+		// Р—Р°РєСЂС‹С‚РёРµ СЃРѕРєРµС‚Р° Рё РІС‹СЃРІРѕР±РѕР¶РґРµРЅРёРµ СЂРµСЃСѓСЂСЃРѕРІ Winsock
 		closesocket(client.socket);
 		closesocket(server.socket);
 		WSACleanup();
@@ -105,39 +103,39 @@ int main() {
 	{
 		client.socket = create_socket(c, PORT);
 		
-		// Создание сокета
+		// РЎРѕР·РґР°РЅРёРµ СЃРѕРєРµС‚Р°
 	    if (client.socket == INVALID_SOCKET) {
-	        error("Не удалось создать сокет");
+	        error("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ СЃРѕРєРµС‚");
 	    }
 	    	
-	    // Подключение к серверу
+	    // РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє СЃРµСЂРІРµСЂСѓ
 	    if (connect(client.socket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
-	        error("Ошибка при подключении к серверу");
+	        error("РћС€РёР±РєР° РїСЂРё РїРѕРґРєР»СЋС‡РµРЅРёРё Рє СЃРµСЂРІРµСЂСѓ");
 	    }
 	
-	    printf("Подключение к серверу установлено. Готов к обмену сообщениями.\n");
+	    printf("РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє СЃРµСЂРІРµСЂСѓ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ. Р“РѕС‚РѕРІ Рє РѕР±РјРµРЅСѓ СЃРѕРѕР±С‰РµРЅРёСЏРјРё.\n");
 	
 	    while (1) {
-			// Отправка сообщения серверу
-			printf("Клиент (Введите сообщение): ");
+			// РћС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ СЃРµСЂРІРµСЂСѓ
+			printf("РљР»РёРµРЅС‚ (Р’РІРµРґРёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ): ");
 			fgets(message, MAX_MESSAGE_LENGTH, stdin);
 			message[strcspn(message, "\n")] = '\0';
 			
 			if (send(client.socket, message, strlen(message), 0) == SOCKET_ERROR) {
-			error("Ошибка при отправке сообщения");
+			error("РћС€РёР±РєР° РїСЂРё РѕС‚РїСЂР°РІРєРµ СЃРѕРѕР±С‰РµРЅРёСЏ");
 			}
 			
-			// Очистка буфера сообщения
+			// РћС‡РёСЃС‚РєР° Р±СѓС„РµСЂР° СЃРѕРѕР±С‰РµРЅРёСЏ
 			memset(message, 0, MAX_MESSAGE_LENGTH);
 			
-			// Получение ответного сообщения от сервера
+			// РџРѕР»СѓС‡РµРЅРёРµ РѕС‚РІРµС‚РЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ РѕС‚ СЃРµСЂРІРµСЂР°
 			if (recv(client.socket, message, MAX_MESSAGE_LENGTH, 0) == SOCKET_ERROR) {
-			error("Ошибка при получении сообщения");
+			error("РћС€РёР±РєР° РїСЂРё РїРѕР»СѓС‡РµРЅРёРё СЃРѕРѕР±С‰РµРЅРёСЏ");
 			}
 			
-			printf("Сервер: %s\n", message);
+			printf("РЎРµСЂРІРµСЂ: %s\n", message);
 	    }
-	    // Закрытие сокета и высвобождение ресурсов Winsock
+	    // Р—Р°РєСЂС‹С‚РёРµ СЃРѕРєРµС‚Р° Рё РІС‹СЃРІРѕР±РѕР¶РґРµРЅРёРµ СЂРµСЃСѓСЂСЃРѕРІ Winsock
 	    closesocket(client.socket);
 	    WSACleanup();
 	}
@@ -152,7 +150,7 @@ SOCKET create_socket(char type, int port) {
 		serverAddress.sin_addr.s_addr = INADDR_ANY;
 	} 
 	else if(type == 'k') {
-		printf("Введите IP адрес сервера: ");
+		printf("Р’РІРµРґРёС‚Рµ IP Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР°: ");
 		char ipserv[MAX_MESSAGE_LENGTH];
 		getchar();
 		fgets(ipserv, MAX_MESSAGE_LENGTH, stdin);
